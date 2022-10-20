@@ -1,0 +1,271 @@
+%% ASEN 3200: Megaconstellation Driver Script
+
+%{
+Authors: 
+Jonathan Shaw
+Chris Lolkema
+Zach Reichenbach
+
+
+Date created: 11/27/2021
+Date modified: 12/05/2021
+
+Purpose of this program: simulate a megaconstellation and answer the
+questions in the associated assignment document. 
+
+Extra notes:
+
+1. Assumption in Plot Regarding MSDs vs Sidereal Days:
+
+    A mean solar day is used as the time period over which the orbits/cities
+    are analyzed. The plot generated assumes no rotation of the cities'
+    longitudinal coordinates relative to the ECI frame at t=0, since the
+    difference longitudinal coordinates after a MSD and a sidereal day is so
+    small, and the plot is simply to provide an approximate idea of what's
+    going on with the orbits over the course of a day. 
+
+2. Organization of Specific Variables:
+
+    a) r_sites:
+       Because of the rotation of the Earth, the vector in ECI coordinates
+       to each city changes with time. The cell array r_sites holds the ECI
+       r vector at each time step, t, for all the cities. Each column
+       represents the vector to a city, where column 1 tracks to city 1 in
+       the corresponding worldcities.csv document. I.e., r_sites{3}(:,1)
+       gives the [X_ECI; Y_ECI; Z_ECI] location of Tokyo at the third time
+       step.
+
+    b) num_sc_LoS:
+       The first column of this variable is the time vector (24 hr in 30 s
+       increments). Each of the other columns of this variable store the
+       number of spacecraft at a given time, for a given city. I.e. column
+       2 shows the number of spacecraft visible in Tokyo (the first entry
+       in the cities document) at a given time, while column 3 shows
+       the number of spacecraft visible in Jakarta at a given time.
+
+    c) satellite_list:
+       The radius and velocity vectors at each time step are given under
+       the fields "r_MSD" and "rdot_MSD," respectively. Columns 1-3 store
+       the ECI X,Y, and Z values at a given time step, respectively. 
+
+       The "t" field stores the time vector (30 s increments for a full MSD)
+
+       The "LoS" stores whether a specific spacecraft is within the line of
+       site of a specific city at a given time step, t. Each column
+       represents a city. I.e., column 1 for spacecraft 1 shows whether
+       spacecraft 1 can be seen from Tokyo at any given time step, while
+       column 2 for spacecraft 2 shows whether spacecraft 2 can be seen
+       from Jakarta at any given time step. The data type of the LoS array
+       is technically double, but 1s denote "true" and 0s denote "false."
+
+3. Run Time:
+   The current run time of this driver script is ~420 s, or ~7 minutes. 
+%}
+
+%housekeeping:
+close all; clear; clc;
+tic
+
+%% Constants
+mu = 398600; %km^3/s^2 mu of Earth
+J2=1082.63*10^(-6); %J2 of Earth
+Re = 6378.1; %km radius of Earth
+omega_e = 2*pi/(3600*24); %rad/s rotation rate of earth about ECI k-axis
+elevation_limit = 15*pi/180; %rad min elevation angle required for lines
+dot_product_el_limit = cos(pi/2 - elevation_limit); %scalar value for comparison in testLoS function
+
+%% Loading Data
+
+%loading coastline data: 
+coastline_data = pi/180 * load('world_coastline_low.txt'); 
+
+%reading in JSON file: 
+[num_launches, num_spacecraft, satellite_list] = loadConstellation('example_constellation.json');
+
+%reading in world cities file:
+cities_raw = readtable('worldcities.csv');
+city_names = table2array(cities_raw(:,1));
+city_coods = pi/180 * [table2array(cities_raw(:,3)), table2array(cities_raw(:,4))]; %rad lat/long coods of cities
+num_cities = length(city_coods(:,1)); 
+phi_cities = city_coods(:,1); %latitude of cities
+lambda_cities = city_coods(:,2); %longitude of cities
+pop_cities = table2array(cities_raw(:,10)); %population of cities
+
+
+%creating r_ECEF vectors for cities: 
+[x_ECEF_cities, y_ECEF_cities, z_ECEF_cities] = sph2cart(phi_cities, lambda_cities, Re); 
+r_sites_ECEF = [x_ECEF_cities'; y_ECEF_cities'; z_ECEF_cities']; 
+
+% %% Setting Desired Number of Orbits and Corresponding Orbit Parameters
+% num_orbits = 3;
+% 
+% %initial orbit parameters, excluding f(0):
+% a_orbits = [NaN; NaN; NaN]; 
+% e_orbits = [NaN; NaN; NaN]; 
+% i_orbits = [NaN; NaN; NaN]; 
+% Om0_orbits = [NaN; NaN; NaN]; 
+% om0_orbits = [NaN; NaN; NaN]; 
+% oe0 = [a_orbits'; e_orbits'; i_orbits'; Om0_orbits'; om0_orbits'; NaN(1,length(a_orbits))]; 
+% 
+% 
+% num_spacecraft_vec = [30; 30; 40]; %num sc in orbits 1,2, and 3, respectively
+% 
+%%calculating cost:
+%cost = 50 * num_orbits + 5 * sum(num_spacecraft_vec); %cost in millions of
+%USD
+% %linearly spacing out spacecraft initial true anomalies: 
+% f0_orbits{1,1} = linspace(0,2*pi, num_spacecraft_vec(1)); 
+% f0_orbits{1,2} = linspace(0,2*pi, num_spacecraft_vec(2)); 
+% f0_orbits{1,3} = linspace(0,2*pi, num_spacecraft_vec(3)); 
+% 
+% %% Creating Structs and Writing to a .json File 
+% 
+% all_info.companyName = 'MmmJeffBeezos'; 
+% companyExecs = ["Chris Lolkema",  "Jonathan Shaw", "Zak Reichenbach"]; 
+% for i = 1:length(companyExecs)
+%     all_info.companyExecutives{i,1} = char(companyExecs(i)); 
+% end
+% 
+% for i = 1:num_orbits
+%     all_info.launches(i).launchName = num2str(i); 
+%     all_info.launches(i).orbit = oe0(:,i);
+%     f0_vec = f0_orbits{1,i};
+%         for j = 1:num_spacecraft_vec(i)
+%             all_info.launches(i).payload(j).name = num2str(j); 
+%             all_info.launches(i).payload(j).f = f0_vec(j); 
+%         end
+% end
+% 
+% jsonFileName = sprintf('MegaconstellationInfo.json');
+% fid = fopen(jsonFileName, 'w'); 
+% jsonFile = jsonencode(all_info, 'PrettyPrint', true); 
+% fprintf(fid, jsonFile);
+% 
+
+%% Debugging propagateState.m Function
+
+oe1 = satellite_list(1).oe0; 
+oe2 = satellite_list(2).oe0; 
+
+a1 = satellite_list(1).oe0(1); 
+e1 = satellite_list(1).oe0(2); 
+
+a2 = satellite_list(2).oe0(1); 
+e2 = satellite_list(1).oe0(2); 
+
+oe1 = propagateState(oe1, 1000,0,mu,J2,Re);
+oe2 = propagateState(oe2, 1000,0,mu,J2,Re);
+
+
+
+ %% Orbit Element Propagation and Line of Sight Determination
+
+%propagating orbit for full mean solar day: 
+t_0 = 0; 
+t_final = 24*3600; %s final time
+t_vec = t_0:30:t_final; %time vector using 30 s increments
+
+%initializing the matrix to store the number of spacecraft in sight of each city at each time step:
+%please see extra notes in header for the organization of this variables
+num_sc_LoS = zeros(length(t_vec),num_cities+1); %will store num_sc in sight of each city at each time
+num_sc_LoS(:,1) = t_vec; %storing time vector in first column of matrix
+sc_final_orbit_vals = NaN(6,num_spacecraft); 
+
+for j = 1:num_spacecraft
+
+   
+    %initializing struct in satellite_list to store r_ECI, rdot_ECI for full
+    %MSD:
+    satellite_list(j).r_MSD = NaN(length(t_vec),3); 
+    satellite_list(j).rdot_MSD = NaN(length(t_vec),3);
+    satellite_list(j).t = t_vec';
+    satellite_list(j).LoS = NaN(length(t_vec),length(city_coods(:,1)));
+
+    %breaking out initial orbital elements:
+    oe0 = satellite_list(j).oe0; 
+    
+    for k = 1:length(t_vec)
+        
+        x = propagateState(oe0,t_vec(k),t_0,mu,J2,Re);
+        r_ECI = x(1:3); 
+        rdot_ECI = x(4:6);
+        del_lambda = omega_e * (t_vec(k)-t_0);
+        
+        %finding r_ECEF_satellite, accounting for rotation of the Earth:
+        ECI2ECEF_matrix = [cos(del_lambda), sin(del_lambda), 0; ...
+            -sin(del_lambda), cos(del_lambda), 0; ...
+            0, 0, 1];
+        
+        r_ECEF = ECI2ECEF_matrix * r_ECI; 
+        
+        %storing r_final, rdot_final for later orbit propagation:
+            if k == length(t_vec)
+                sc_final_orbit_vals(:,j) = [r_ECI; rdot_ECI]; 
+            end
+        
+        satellite_list(j).r_MSD(k,:) = r_ECI';
+        satellite_list(j).rdot_MSD(k,:) = rdot_ECI';
+        
+        %line of sight testing:
+        inLoS_vec = zeros(1, length(num_cities)); 
+                
+            for l = 1:num_cities            
+            inLoS_vec(l) = testLoS(r_sites_ECEF(:,l), r_ECEF, dot_product_el_limit); 
+            end
+
+        satellite_list(j).LoS(k,:) = inLoS_vec; 
+    end
+    
+    num_sc_LoS(:,2:end) = num_sc_LoS(:,2:end) + satellite_list(j).LoS;    
+end
+    
+%calculating megaconstellation value:
+value = 0; 
+for j = 1:num_cities
+    value = value + (pop_cities(j)/(t_final - t_0)) * sum(num_sc_LoS(:,j+1)); 
+end
+
+% optimal_ratio = value/cost; 
+
+%getting orbital elements from final orbit vals:
+final_orb_elements = zeros(6,3);
+
+for j= 1:3
+    final_orb_elements(:,j) = GetOrbitalElements(sc_final_orbit_vals(:,j), mu); 
+end
+
+
+
+
+
+%% Plotting 3D Rendering of Earth (with Coastlines and Cities)
+
+%getting ECI coordinates of cities and coastlines:
+[x_cities, y_cities, z_cities] = sph2cart(city_coods(:,2), city_coods(:,1), Re); %ECI coods of cities. Since one full rotation is made, no rotation of the Earth needs to be accounted for. 
+[x_coastlines, y_coastlines, z_coastlines] = sph2cart(coastline_data(:,1), coastline_data(:,2), Re); %ECI coods of coastlines
+
+%plotting cities and coastlines:
+figure(1)
+scatter3(x_coastlines, y_coastlines, z_coastlines, 1)
+hold on
+plot3(x_cities, y_cities, z_cities, 'r*', 'markersize', 0.01)
+xlabel('X_{ECI} [km]', 'fontsize', 12, 'fontweight', 'bold')
+ylabel('Y_{ECI} [km]', 'fontsize', 12, 'fontweight', 'bold')
+zlabel('Z_{ECI} [km]', 'fontsize', 12, 'fontweight', 'bold')
+
+%propagating orbits of spacecraft:
+
+%accessing orbit parameters for each sc:
+for j = 1:num_spacecraft
+    a = satellite_list(j).oe0(1); 
+    T = 2*pi*sqrt(a^3/mu); 
+    tspan = [0 T];
+    [t{j},Xout{j}] = ode45(@(t,X) orbit(mu, X), tspan, sc_final_orbit_vals(:,j));
+    
+    figure(1)
+    plot3(Xout{j}(:,1), Xout{j}(:,2), Xout{j}(:,3))  
+end
+
+figure(1)
+legend('Coastlines', 'Cities', 'SC_1 Orbit', 'SC_2 Orbit', 'SC_3 Orbit')
+toc
