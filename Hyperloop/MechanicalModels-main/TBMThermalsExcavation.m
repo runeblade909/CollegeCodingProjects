@@ -14,24 +14,24 @@ mm2in = 0.0393701; %LINEAR DISTANCE
 m2in2 = 1550; %SQUARE DISTANCE
 m2in = 39.370;
 %% Variables
-MotorPower = 7; % [kW]
+MotorPower = 5; % [kW]
 
 Qmotor = MotorPower*0.08*1000; %[W] 92% efficiency on motor
 Qprop = 0.6*1000;       %for all 6 prop linear actuators based off eff. loss
 % Qgear = 0.5*1000;       %safety if gearbox is cooled
 QThermal = Qmotor+Qprop ; %+Qgear;
 h = 500; % [W/m^2k] https://www.engineersedge.com/heat_transfer/convective_heat_transfer_coefficients__13378.htm 
-Tsurf =100+273; %K motor limit temp
-Tinf = 35+273; %estimated water temp at start of loop https://www.thunderstruck-ev.com/me1616.html#:~:text=Coolant%20temp%20leaving%20the%20motor,the%20inlet%20side%20is%20allowable.
+Tsurf =60+273; %K linear actuator temp 100C for motor
+Tinf = 0+273; %estimated water temp at start of loop https://www.thunderstruck-ev.com/me1616.html#:~:text=Coolant%20temp%20leaving%20the%20motor,the%20inlet%20side%20is%20allowable.
 %% Calculations
 
 %New goal is to look into convection coeff. with volume flow for the pump
 %and the amount of water needed to hold the heat for steady state
 
 %https://www.engineersedge.com/thermodynamics/convective_heat_transfer.htm
-
 D = 0.5; %in
 D_m = D/m2in;
+r =D/2;
 
 kWat = 0.545; %W/m*k
 kCop = 398; %W/m*k
@@ -43,7 +43,7 @@ A_M = (Qmotor+Qprop)/((Tsurf-Tinf)*(h)); %m^2
 A_in = A_M*m2in2;
 
 %Cylinder Surface area 2*PI*r*L 
-%r = 1/2''
+%r = 1/2D''
 
 Pipelength = A_in/(2*pi*0.25); % Pipe length
 
@@ -61,9 +61,9 @@ L = D/Pipelength;
 
 % MIX SOLUTION https://www.engineeringtoolbox.com/ethylene-glycol-d_146.html
 
-mu = 0.3550*10^-3; %Ns/M^2*10^-3
+mu = 0.3550*10^-3; %Ns/M^2
 rho = 1025; %kg/m^3 ~25% gycol Water mix
-Cp = 4.186.8*.935*1000; %j/kgk  % ~25% gycol Water mix
+Cp = 4.1868*.935*1000; %j/kgk  % ~25% gycol Water mix
 
 %Prandtl Number = Cp*mu/K;
 
@@ -74,11 +74,12 @@ Pr = (Cp) * mu/kWat;
 
 %hc = (Nu * k)/L Convection Coeff
 
+%LaminarFlow in Circular Tube
 
-Nu = h*(L/m2in)/kWat;
+Nu = 4.36;
 
 
-Re = Nu/(0.0265*Pr^0.4);
+Re = (Nu/(0.023*Pr^0.4))^(1/.8);
 %0.6<=PR<=160
 
 Vel = Re*mu/(D_m*rho);
@@ -97,8 +98,7 @@ VolFlowPump = VolFlow * 951019; % Gal/hr
 %Beta =  air thermal expansion coeff
 %D = Diameter of Pipe
 
-
-
+m = QThermal/(Cp*(10))
 
 
 
