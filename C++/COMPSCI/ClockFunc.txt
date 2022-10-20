@@ -1,0 +1,15 @@
+first thing I would do was try to convert time scales all to 24 hour
+time for work sake.
+
+second I would try to make a disticntion between AM and PM.
+maybe try to make PM add 12 hours onto the time.
+
+Ask for inputs for time in hours, minutes and seconds.
+    ASk if it was 12 or 24 hour format
+        if 12 hour ask if AM or PM
+ConVeRt thE TiMe....
+
+I trial and error wrote the conversion part of the function,
+Try not to mess up my variables by makeing place holder variables.
+
+Christ there was a lot to do around 12 for both noon and midnight
