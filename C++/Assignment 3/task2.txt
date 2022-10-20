@@ -1,0 +1,23 @@
+%By Zak Reichenbach
+%9/19/2019
+
+1) What is the value of variable num when you press the Run button one time to run the script in Figure
+1, and why?
+Answer: In the script the value of num is still 10, while the variable result has been altered and 
+now have the value of 12. The function would have changed the value of the variable num but
+because the function was assigned so that its end number equalled the result, the result stores 
+that new value.
+
+2) What is the value of variable num when you press the Continue button one time after 1), and why?
+Answer: I don't know what it means by press the "continue" button, but im going to assume that it means
+to run the script again? But the variable of num is still 10. For the same reasons as for
+the first time the script was run. If the results of each previous time you ran the program 
+were assigned to be the new value of num, they the numbers would continue to climb by
+2 but that is not the case. Running the script over and over again will give you the same 
+results unless you make the script input the new values you achieve at the end of running it.
+
+3) What are the values of variable num and result when you press the Continue button one time after
+2), and why?
+Answer: Still the same, for the exact same reasons as 2. The value of num never changes in
+the script and therefore the value that is spit our of scopeFunc.m wont change for the 
+answer under the variable "result" either.

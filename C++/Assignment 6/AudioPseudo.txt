@@ -1,0 +1,9 @@
+1. The first thing that the script should do is to summon a GUI menu
+to give all of the options for the program.
+-Starting with the 3 function stubs, it should give the option to do 
+the 1. Audio Echo, 2. Compress, 3. fftBar whatever that last one is.
+
+2. In the cases for the GUI menu, we should see in case 1
+that it runs the Audio Echo function
+3. Case 2 for the GUI menu should summon the Compress function
+4. Case 3 should summon the fftBar function
