@@ -1,0 +1,251 @@
+#include <iostream>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <bits/stdc++.h>
+
+using namespace std;
+char letterArr[] = {32,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122};
+int const length = 53;
+string keyPhrase = "May your mountains rise";
+char keyPhrase1[23] = {};
+float const keyPhraseLength = 23;
+char DNA[23] = {};
+string populationArray[200] = {};
+int const populationSize = 200;
+int fitness[23] = {};
+int Scores = {};
+float ScoresArray[200] ={};
+float ScoresPercentArray[200] = {};
+float FitnessScores[200] = {};
+float max_ele;
+float matingFactor = 10;
+float indiciesCounter = 0;
+float indiciesArray[200] = {};
+float matingPool[200] = {};
+float ticketCounter = 0;
+float p1 = 0;
+float p2 = 0;
+
+void buildPopulation();
+void calculateFitness();
+void buildMatingPool();
+void practicuum (float arr[], int size, float max_ele);
+void breed();
+
+int main()
+{
+    //Seed timer
+
+    srand(time(NULL)); 
+
+    // show our desired phrase
+
+    cout << keyPhrase << endl << endl;
+    
+    //function to build our population of 200 people with 23 char long arrays
+
+    buildPopulation();
+
+
+    // Seperate for 1.2
+
+    cout << "The first member of the population is [" << populationArray[0] << "] Followed by [" << populationArray[1] << "]" << endl;
+    cout << "-----------------------------------------------------------------------------------\n" << endl;
+    cout << "Now to calculate fitness based off of the 'May your mountains rise' key phrase we are looking for.\n" << endl;
+
+    //Fitness Calculation
+
+    calculateFitness();
+    
+    cout << endl << "-----------------------------------------------------------------------------------\n" << endl;
+
+    //Build Mating build mating pool
+
+    buildMatingPool();
+    practicuum (FitnessScores, populationSize, max_ele);
+
+    cout << endl;
+    //cout << populationArray[199] << endl;
+    breed();
+
+
+    return 0;
+}
+
+void buildPopulation()
+{
+    for (int j=0; j<= 199; j++)
+    {
+        for (int i=0; i<=keyPhraseLength-1; i++)
+        {  
+            DNA[i] = letterArr[rand()%53];
+            cout << DNA[i];
+        }
+        populationArray[j] = DNA;
+     int count;
+     count = j +1;
+
+     cout << endl << count << endl;
+    }
+}
+
+void calculateFitness()
+{
+    cout << "Target phrase is: " << keyPhrase << " which is a " << keyPhraseLength << " character long phrase." << endl << endl;
+
+
+ for (int y = 0; y <= populationSize-1; y++)
+ {
+     //Put element of population array (string) back into a char array
+    strcpy(DNA , populationArray[y].c_str());
+
+        for (int i=0; i <=keyPhraseLength; i++)
+        {
+            cout << DNA[i];
+
+        }
+
+    //Put keyphrase into a char array
+    cout << endl;
+    
+    strcpy(keyPhrase1, keyPhrase.c_str());
+           
+
+    //Calculate Fitness
+    for (int k = 0; k <= keyPhraseLength-1; k++)
+    {
+     fitness[k] = DNA[k] == keyPhrase1[k];
+
+     cout << fitness[k];
+
+     Scores += fitness[k];
+
+    }
+    cout << endl;
+
+    
+ // spit out number of matching values and also the percent
+    ScoresArray[y] = Scores;
+    cout << ScoresArray[y] << endl;
+    Scores = 0;
+    ScoresPercentArray[y] = ScoresArray[y]/keyPhraseLength;
+    cout << ScoresPercentArray[y] << endl << endl;
+
+ }
+}
+
+void buildMatingPool() 
+//Puts everything that was calculated into arrays for orginization
+{
+    //loop for all paprts of the array
+    for (int y = 0; y <= populationSize-1; y++)
+    {
+        // rounds to second decimal place
+        FitnessScores[y] = (ceil(ScoresPercentArray[y]*100)/100);
+
+        // Helps in the beginning
+        if (FitnessScores[y]<=.099 && FitnessScores[y] > 0)
+        {
+           FitnessScores[y] = .1;
+        }
+
+        // Create Number of tickets
+        FitnessScores[y] = round(FitnessScores[y]*10);
+
+        
+    }
+}
+
+void practicuum (float arr[], int size, float max_ele) 
+// Second part of building the mating pool, index matrix along with the tickets
+{
+    // list array, this shows which DNA strand has a match, and how many
+    for (int y =0; y<=size-1;y++)
+    {
+        cout << arr[y] << " ";
+    }
+    
+    cout << endl;
+    max_ele = 0;
+    // Find max element
+    for (int i =0; i<=size;i++)
+    {
+
+        if (max_ele <= arr[i])
+        {
+            max_ele = arr[i];
+
+        }
+
+        
+    }
+    cout << endl << "Our maximum element is: " << max_ele << endl << endl;
+    //Give people their tickets
+    for (int i = 0; i<=size; i++)
+    {
+        arr[i] = arr[i]/max_ele;
+        arr[i] = arr[i] * matingFactor;
+        cout << arr[i] << " ";
+    }
+    cout << endl;
+
+    cout << endl << "Now creating the mating pool indicies: " << endl << endl;
+    //Create an indicies array
+    for (int i = 0; i<= size; i++)
+    {
+        if(arr[i] > 0)
+        {
+        indiciesArray[i] = indiciesCounter;
+        }
+        else
+        {
+            indiciesArray[i] = {};
+        }
+        indiciesCounter += 1;
+        cout << indiciesArray[i] << " ";
+        
+    }
+    cout << endl << endl;
+ 
+ // TRYING to create the mating pool
+    
+    ticketCounter = 0;
+    
+    for(int i = 0; i <= size; i++)
+    {
+        for(int k =0; k <= arr[i]-1; k++)
+        {
+            if (arr[i] > 0)
+            {
+                
+                ticketCounter = 0;
+                matingPool[i] = indiciesArray[i]; 
+                ticketCounter++;
+
+                cout << matingPool[i] << " ";
+            }
+        }
+
+    } 
+
+}
+
+void breed()
+{
+    cout << endl;
+
+    populationArray;
+
+    
+
+    float p1 = rand() % 199;
+
+    float p2 = rand() % 199;
+    
+    cout << p1 << " " << p2 << endl;
+
+
+
+
+}
