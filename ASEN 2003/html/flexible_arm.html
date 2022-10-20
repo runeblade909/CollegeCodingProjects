@@ -1,0 +1,275 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>flexible_arm</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-04-22"><meta name="DC.source" content="flexible_arm.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Experimental Data</a></li><li><a href="#3">Constants</a></li><li><a href="#4">Transfer Function</a></li><li><a href="#5">Plot and Compare</a></li></ul></div><pre class="codeinput">clear;clc;close <span class="string">all</span>;
+
+<span class="comment">%Code by: Zhixing Yao</span>
+<span class="comment">%Edited and Analysed by: Zak Reichenbach</span>
+</pre><h2 id="2">Experimental Data</h2><pre class="codeinput">path = <span class="string">"Flexible Arm Data/"</span>;
+files = dir(path+<span class="string">"*.txt"</span>);
+filename = files(randi([1,length(files)])).name;
+data = load(path+filename);
+time = (data(:,1)-data(1,1))./1000;
+theta = data(:,2);
+</pre><h2 id="3">Constants</h2><pre class="codeinput">Kg = 33.3; <span class="comment">% gear ratio</span>
+Km = 0.0401; <span class="comment">% motor constant</span>
+Rm = 19.2; <span class="comment">% armature resistance [ohm]</span>
+J_hub = 0.0005;
+J_load = .0015;
+J = J_hub+J_load; <span class="comment">% total inertia [kg*m^2]</span>
+
+L = .45; <span class="comment">% link length [m]</span>
+Marm = 0.06; <span class="comment">% link mass of stainless steel ruler [kg]</span>
+J_arm = 0.0041; <span class="comment">% [kg*m^2]</span>
+Mtip = .050;  <span class="comment">% [kg]</span>
+J_M = 0.01; <span class="comment">% [kgm^2]</span>
+J_L = J_arm + J_M; <span class="comment">% [kg*m^2]</span>
+fc = 1.8; <span class="comment">% natural frequency [Hz]</span>
+K_arm = ((2*pi*fc)^2*(J_L)); <span class="comment">% stiffness (Jl+Jm)</span>
+
+p1 = -Kg^2*Km^2/(J_hub*Rm);
+q1 = K_arm/(L*J_hub);
+r1 = Kg*Km/(J_hub*Rm);
+p2 = Kg^2*Km^2*L/(J_hub*Rm);
+q2 = -K_arm*(J_hub + J_L)/(J_L*J_hub);
+r2 = -Kg*Km*L/(J_hub*Rm);
+</pre><h2 id="4">Transfer Function</h2><pre class="codeinput">fpara = strsplit(filename,<span class="string">"_"</span>);
+K1 = 10 ;      <span class="comment">% str2double(fpara{2});  %hub P</span>
+K2 =  -2.5;     <span class="comment">% str2double(fpara{3}); %Defletion P</span>
+K3 = .8;       <span class="comment">%str2double(fpara{4});  %Hub D</span>
+K4 =  .5 ;    <span class="comment">% str2double(strrep(fpara{5},".txt","")); %Deflection D</span>
+lambda0 = K1*(q1*r2-q2*r1);
+lambda1 = p1*q2-q1*p2+K3*(q1*r2-r1*q2)+K2*(p2*r1-r2*p1);
+lambda2 = -q2+K1*r1+K2*r2+K4*(p2*r1-r2*p1);
+lambda3 = -p1+K3*r1+K4*r2;
+
+T = time;
+U = data(:,6);
+
+num1 = [K1*r1, 0, K1*(q1*r2-r1*q2)];
+den1 = [1, lambda3, lambda2, lambda1, lambda0];
+sysTF1 = tf(num1,den1);
+[thetaSim,timeSim,~] = lsim(sysTF1,U,T);
+
+
+num2 = [K1*r2, K1*(p2*r1-r2*p1), 0];
+den2 = [1, lambda3, lambda2, lambda1, lambda0];
+sysTF2 = tf(num2,den2);
+[tipSim,tipTimeSim,~] = lsim(sysTF2,U,T);
+
+
+s = stepinfo(sysTF1,<span class="string">'SettlingTimeThreshold'</span>,.05);
+
+s2 = stepinfo(sysTF2,<span class="string">'SettlingTimeThreshold'</span>,.05);
+</pre><h2 id="5">Plot and Compare</h2><pre class="codeinput">figure(1);
+hold <span class="string">on</span>;
+plot(timeSim,thetaSim,<span class="string">"LineWidth"</span>,2);
+plot(time,theta,<span class="string">"LineWidth"</span>,1);
+title(<span class="string">"Flexible Arm"</span>);
+legend(<span class="string">"simulation"</span>,<span class="string">"experiment"</span>);
+ylabel(<span class="string">"theta [rad]"</span>);
+xlabel(<span class="string">"time [s]"</span>);
+
+figure;
+hold <span class="string">on</span>;
+plot(tipTimeSim,tipSim,<span class="string">"LineWidth"</span>,2);
+plot(time,data(:,3),<span class="string">"LineWidth"</span>,1);
+title(<span class="string">"Flexible Arm Tip Deflection"</span>);
+legend(<span class="string">"simulation"</span>,<span class="string">"experiment"</span>);
+xlabel(<span class="string">"Time [s]"</span>);
+ylabel(<span class="string">"Deflection [m]"</span>);
+yline(.01)
+yline(-.01)
+fprintf(<span class="string">'K1 (Proportional Hub Angle):%f K2 (Proportional Deflection):%f \nK3 (Derivative Hub Angle):%f    K4 (Derivative Deflection):%f\n'</span>,K1,K2,K3,K4)
+</pre><pre class="codeoutput">
+ans = 
+
+  ConstantLine with properties:
+
+    InterceptAxis: 'y'
+            Value: 0.0100
+            Color: [0.1500 0.1500 0.1500]
+        LineStyle: '-'
+        LineWidth: 0.5000
+            Label: ''
+      DisplayName: ''
+
+  Use GET to show all properties
+
+
+ans = 
+
+  ConstantLine with properties:
+
+    InterceptAxis: 'y'
+            Value: -0.0100
+            Color: [0.1500 0.1500 0.1500]
+        LineStyle: '-'
+        LineWidth: 0.5000
+            Label: ''
+      DisplayName: ''
+
+  Use GET to show all properties
+
+K1 (Proportional Hub Angle):10.000000 K2 (Proportional Deflection):-2.500000 
+K3 (Derivative Hub Angle):0.800000    K4 (Derivative Deflection):0.500000
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+clear;clc;close all;
+
+%Code by: Zhixing Yao
+%Edited and Analysed by: Zak Reichenbach
+
+%% Experimental Data
+path = "Flexible Arm Data/";
+files = dir(path+"*.txt");
+filename = files(randi([1,length(files)])).name;
+data = load(path+filename);
+time = (data(:,1)-data(1,1))./1000;
+theta = data(:,2);
+
+%% Constants
+Kg = 33.3; % gear ratio
+Km = 0.0401; % motor constant
+Rm = 19.2; % armature resistance [ohm]
+J_hub = 0.0005;
+J_load = .0015;
+J = J_hub+J_load; % total inertia [kg*m^2]
+
+L = .45; % link length [m]
+Marm = 0.06; % link mass of stainless steel ruler [kg]
+J_arm = 0.0041; % [kg*m^2]  
+Mtip = .050;  % [kg]
+J_M = 0.01; % [kgm^2]
+J_L = J_arm + J_M; % [kg*m^2]
+fc = 1.8; % natural frequency [Hz]
+K_arm = ((2*pi*fc)^2*(J_L)); % stiffness (Jl+Jm)
+
+p1 = -Kg^2*Km^2/(J_hub*Rm); 
+q1 = K_arm/(L*J_hub);
+r1 = Kg*Km/(J_hub*Rm);
+p2 = Kg^2*Km^2*L/(J_hub*Rm);
+q2 = -K_arm*(J_hub + J_L)/(J_L*J_hub);
+r2 = -Kg*Km*L/(J_hub*Rm);
+
+%% Transfer Function
+fpara = strsplit(filename,"_");
+K1 = 10 ;      % str2double(fpara{2});  %hub P
+K2 =  -2.5;     % str2double(fpara{3}); %Defletion P
+K3 = .8;       %str2double(fpara{4});  %Hub D
+K4 =  .5 ;    % str2double(strrep(fpara{5},".txt","")); %Deflection D
+lambda0 = K1*(q1*r2-q2*r1);
+lambda1 = p1*q2-q1*p2+K3*(q1*r2-r1*q2)+K2*(p2*r1-r2*p1);
+lambda2 = -q2+K1*r1+K2*r2+K4*(p2*r1-r2*p1);
+lambda3 = -p1+K3*r1+K4*r2;
+
+T = time;
+U = data(:,6);
+
+num1 = [K1*r1, 0, K1*(q1*r2-r1*q2)];
+den1 = [1, lambda3, lambda2, lambda1, lambda0];
+sysTF1 = tf(num1,den1);
+[thetaSim,timeSim,~] = lsim(sysTF1,U,T);
+
+
+num2 = [K1*r2, K1*(p2*r1-r2*p1), 0];
+den2 = [1, lambda3, lambda2, lambda1, lambda0];
+sysTF2 = tf(num2,den2);
+[tipSim,tipTimeSim,~] = lsim(sysTF2,U,T);
+
+
+s = stepinfo(sysTF1,'SettlingTimeThreshold',.05);
+
+s2 = stepinfo(sysTF2,'SettlingTimeThreshold',.05);
+
+%% Plot and Compare
+figure(1);
+hold on;
+plot(timeSim,thetaSim,"LineWidth",2);
+plot(time,theta,"LineWidth",1);
+title("Flexible Arm");
+legend("simulation","experiment");
+ylabel("theta [rad]");
+xlabel("time [s]");
+
+figure;
+hold on;
+plot(tipTimeSim,tipSim,"LineWidth",2);
+plot(time,data(:,3),"LineWidth",1);
+title("Flexible Arm Tip Deflection");
+legend("simulation","experiment");
+xlabel("Time [s]");
+ylabel("Deflection [m]");
+yline(.01)
+yline(-.01)
+fprintf('K1 (Proportional Hub Angle):%f K2 (Proportional Deflection):%f \nK3 (Derivative Hub Angle):%f    K4 (Derivative Deflection):%f\n',K1,K2,K3,K4)
+
+
+
+##### SOURCE END #####
+--></body></html>
