@@ -1,0 +1,15 @@
+﻿Material,Solar_Absorptivity,Emmissivity,Power_Req,Cost,Surface_Temp_Min,Surface_Temp_Max
+AgTeflon,0.099,0.75,20.1,5,-203.3,-11.7
+SSM,0.1,0.9,23.2,5,-205.1,-17.7
+White Paint,0.24,0.83,21.7,5,-204.3,-11.4
+Heat Switch,0.099,0.75,15.9,5,-203.1,-0.8
+Deployable Radiator (MLI),0.05,0.05,5.6,5,-187,-17.7
+Deployable Radiator (Black Paint),0.97,0.91,5.6,5,-187,-17.7
+Deployable Radiator (MLI),0.05,0.05,5.6,5,-187,-18.5
+Deployable Radiator (White Paint),0.82,0.85,5.6,5,-187,-18.5
+Deployable Radiator (MLI),0.05,0.05,5.7,5,-187,-31.5
+Deployable Radiator (Solar Cell),0.24,0.83,5.7,5,-187,-31.5
+Deployable Radiator (MLI + Heat Switch),0.05,0.05,5.6,5,-186.9,-12.8
+Deployable Radiator (White Paint + Heat Switch),0.24,0.83,5.6,5,-186.9,-12.8
+Louvre,0.17,0.1,6.5,5,-191.4,0
+Lourvre + Heat Switch,0.17,0.75,6.4,5,-191.3,0
